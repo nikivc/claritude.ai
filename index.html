@@ -38,333 +38,488 @@
     </div>
 
     <script>
-
       const mindmapNodes = [
         {
           id: "id1",
-          text: "main idea",
-          parent: null // This is the root item
+          text: "1",
+          parent: null, // This is the root item
         },
         {
           id: "id2",
-          text: "Branch A",
-          parent: "id1"
+          text: "2",
+          parent: "id1",
         },
         {
           id: "id3",
-          text: "Branch B",
-          parent: "id1"
+          text: "3",
+          parent: "id1",
         },
         {
           id: "id4",
-          text: "Branch C",
-          parent: "id1"
+          text: "4",
+          parent: "id1",
         },
         {
           id: "id5",
-          text: "Another level A",
-          parent: "id2"
+          text: "5",
+          parent: "id2",
         },
         {
           id: "id6",
-          text: "Another level B",
-          parent: "id2"
+          text: "6",
+          parent: "id2",
         },
         {
           id: "id7",
-          text: "Another level C",
-          parent: "id3"
-        }
+          text: "7",
+          parent: "id3",
+        },
+        {
+          id: "id8",
+          text: "8",
+          parent: "id3",
+        },
+        {
+          id: "id9",
+          text: "9",
+          parent: "id3",
+        },
       ];
 
+      document.addEventListener("alpine:init", () => {
+        Alpine.data("mindMap", () => ({
+          canvas: null,
 
-        document.addEventListener('alpine:init', () => {
-          Alpine.data('mindMap', () => ({
-            canvas: null,
+          init() {
+            this.$nextTick(() => {
+              this.initCanvas();
+            });
+          },
 
-            init() {
-              this.$nextTick(() => {
-                this.initCanvas();
-              });
-            },
+          initCanvas() {
+            // Initialize Fabric.js canvas
+            this.canvas = new fabric.Canvas("mindmap-canvas", {
+              width: window.innerWidth,
+              height: window.innerHeight,
+              backgroundColor: "#f8fafc",
+            });
 
-            initCanvas() {
-              // Initialize Fabric.js canvas
-              this.canvas = new fabric.Canvas('mindmap-canvas', {
-                width: window.innerWidth,
-                height: window.innerHeight,
-                backgroundColor: '#f8fafc'
-              });
+            this.createMindMap();
+            this.setupResizeHandler();
+          },
 
-              this.createMindMap();
-              this.setupResizeHandler();
-            },
+          createMindMap() {
+            // Clear canvas
+            this.canvas.clear();
 
-            createMindMap() {
-              // Clear canvas
-              this.canvas.clear();
+            // Store nodes and connections for dynamic updates
+            this.nodes = {};
+            this.connections = [];
 
-              // Store nodes and connections for dynamic updates
-              this.nodes = {};
-              this.connections = [];
+            // Build tree structure from mindMapNodes
+            this.buildTreeStructure();
 
-              // Build tree structure from mindMapNodes
-              this.buildTreeStructure();
-              
-              // Calculate positions for all nodes
-              this.calculateNodePositions();
-              
-              // Create connections between nodes FIRST (so they render behind)
-              this.createAllConnections();
-              
-              // Render all nodes AFTER connections (so they render on top)
-              this.renderNodes();
+            // Calculate positions for all nodes
+            this.calculateNodePositions();
 
-              // Set up movement handlers for dynamic connections
-              this.setupMovementHandlers();
+            // Create connections between nodes FIRST (so they render behind)
+            this.createAllConnections();
 
-              // Render the canvas
-              this.canvas.renderAll();
-            },
+            // Render all nodes AFTER connections (so they render on top)
+            this.renderNodes();
 
-            buildTreeStructure() {
-              // Create a map for quick lookup
-              this.nodeMap = {};
-              this.treeStructure = {};
+            // Set up movement handlers for dynamic connections
+            this.setupMovementHandlers();
 
-              // First pass: create node map
-              mindmapNodes.forEach(node => {
-                this.nodeMap[node.id] = {
-                  ...node,
-                  children: [],
-                  level: 0,
-                  position: { x: 0, y: 0 }
-                };
-              });
+            // Render the canvas
+            this.canvas.renderAll();
+          },
 
-              // Second pass: build tree structure
-              mindmapNodes.forEach(node => {
-                if (node.parent === null) {
-                  this.treeStructure = this.nodeMap[node.id];
-                  this.treeStructure.level = 0;
-                } else if (this.nodeMap[node.parent]) {
-                  this.nodeMap[node.parent].children.push(this.nodeMap[node.id]);
-                  this.nodeMap[node.id].level = this.nodeMap[node.parent].level + 1;
-                }
-              });
-            },
+          buildTreeStructure() {
+            // Create a map for quick lookup
+            this.nodeMap = {};
+            this.treeStructure = {};
 
-            calculateNodePositions() {
-              if (!this.treeStructure) return;
+            // First pass: create node map
+            mindmapNodes.forEach((node) => {
+              this.nodeMap[node.id] = {
+                ...node,
+                children: [],
+                level: 0,
+                position: { x: 0, y: 0 },
+              };
+            });
 
-              const centerX = this.canvas.width / 2;
-              const centerY = this.canvas.height / 2;
-              const levelSpacing = 200;
-              const siblingSpacing = 150;
+            // Second pass: build tree structure
+            mindmapNodes.forEach((node) => {
+              if (node.parent === null) {
+                this.treeStructure = this.nodeMap[node.id];
+                this.treeStructure.level = 0;
+              } else if (this.nodeMap[node.parent]) {
+                this.nodeMap[node.parent].children.push(this.nodeMap[node.id]);
+                this.nodeMap[node.id].level =
+                  this.nodeMap[node.parent].level + 1;
+              }
+            });
+          },
 
-              // Position root node at center
-              this.treeStructure.position = { x: centerX, y: centerY };
+          calculateNodePositions() {
+            if (!this.treeStructure) return;
 
-              // Position children recursively
-              this.positionChildren(this.treeStructure, levelSpacing, siblingSpacing);
-            },
+            const centerX = this.canvas.width / 2;
+            const centerY = this.canvas.height / 2;
+            
+            // Calculate node dimensions first
+            this.calculateNodeDimensions();
 
-            positionChildren(node, levelSpacing, siblingSpacing) {
-              if (!node.children || node.children.length === 0) return;
+            // Position root node at center
+            this.treeStructure.position = { x: centerX, y: centerY };
 
-              const childCount = node.children.length;
-              const startAngle = -Math.PI / 2; // Start from top
-              const angleStep = (2 * Math.PI) / childCount;
+            // Position children recursively with collision detection
+            this.positionChildrenWithCollisionDetection(this.treeStructure);
+          },
 
-              node.children.forEach((child, index) => {
-                const angle = startAngle + (index * angleStep);
-                const distance = levelSpacing;
-                
-                child.position = {
-                  x: node.position.x + Math.cos(angle) * distance,
-                  y: node.position.y + Math.sin(angle) * distance
-                };
-
-                // Recursively position grandchildren
-                this.positionChildren(child, levelSpacing * 0.8, siblingSpacing);
-              });
-            },
-
-            renderNodes() {
-              // Render all nodes
-              Object.values(this.nodeMap).forEach(nodeData => {
-                this.createNode(nodeData);
-              });
-            },
-
-            createNode(nodeData) {
+          calculateNodeDimensions() {
+            // Calculate dimensions for all nodes
+            Object.values(this.nodeMap).forEach((nodeData) => {
               const isRoot = nodeData.parent === null;
               const fontSize = isRoot ? 16 : 12;
-              const colors = [
-                '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', 
-                '#06b6d4', '#84cc16', '#f97316', '#ec4899', '#6366f1'
-              ];
-              const colorIndex = nodeData.level % colors.length;
-              const fillColor = colors[colorIndex];
-              const strokeColor = this.darkenColor(fillColor, 0.2);
-
-              // Calculate text dimensions using canvas context
-              const canvas = document.createElement('canvas');
-              const ctx = canvas.getContext('2d');
+              
+              // Calculate text dimensions
+              const canvas = document.createElement("canvas");
+              const ctx = canvas.getContext("2d");
               ctx.font = `bold ${fontSize}px Arial`;
               const textMetrics = ctx.measureText(nodeData.text);
               const textWidth = textMetrics.width;
-              const textHeight = fontSize * 1.2; // Approximate line height
-              
+              const textHeight = fontSize * 1.2;
+
               const padding = isRoot ? 20 : 15;
               const boxWidth = Math.max(textWidth + padding * 2, isRoot ? 120 : 80);
               const boxHeight = textHeight + padding * 2;
-              const cornerRadius = isRoot ? 12 : 8;
 
-              // Create text object
-              const nodeText = new fabric.Text(nodeData.text, {
-                left: 0,
-                top: 0,
-                fontSize: fontSize,
-                fill: 'white',
-                fontWeight: 'bold',
-                originX: 'center',
-                originY: 'center',
-                textAlign: 'center'
-              });
-
-              // Create rounded rectangle box
-              const nodeBox = new fabric.Rect({
-                left: 0,
-                top: 0,
+              nodeData.dimensions = {
                 width: boxWidth,
                 height: boxHeight,
-                fill: fillColor,
-                stroke: strokeColor,
-                strokeWidth: isRoot ? 3 : 2,
-                rx: cornerRadius,
-                ry: cornerRadius,
-                originX: 'center',
-                originY: 'center'
-              });
+                padding: padding
+              };
+            });
+          },
 
-              // Create group
-              const nodeGroup = new fabric.Group([nodeBox, nodeText], {
-                left: nodeData.position.x,
-                top: nodeData.position.y,
-                selectable: true,
-                hasControls: true,
-                hasBorders: true
-              });
+          positionChildrenWithCollisionDetection(node) {
+            if (!node.children || node.children.length === 0) return;
 
-              // Store reference
-              this.nodes[nodeData.id] = nodeGroup;
-              this.canvas.add(nodeGroup);
-            },
+            const childCount = node.children.length;
+            const isRoot = node.parent === null;
+            
+            // Calculate spacing based on node dimensions
+            const minHorizontalSpacing = Math.max(
+              200, // Minimum horizontal spacing
+              node.dimensions.width * 1.5 // At least 1.5x the parent width
+            );
+            const minVerticalSpacing = Math.max(
+              80, // Minimum vertical spacing
+              node.dimensions.height * 1.2 // At least 1.2x the parent height
+            );
 
-            createAllConnections() {
-              // Create connections between parent and child nodes
-              Object.values(this.nodeMap).forEach(nodeData => {
-                if (nodeData.parent !== null) {
-                  this.createConnection(nodeData.parent, nodeData.id);
+            if (isRoot) {
+              // For root node, split children between left and right sides
+              const leftChildren = [];
+              const rightChildren = [];
+
+              node.children.forEach((child, index) => {
+                if (index < Math.ceil(childCount / 2)) {
+                  leftChildren.push(child);
+                } else {
+                  rightChildren.push(child);
                 }
               });
-            },
 
-            darkenColor(color, factor) {
-              // Simple color darkening function
-              const hex = color.replace('#', '');
-              const r = Math.max(0, parseInt(hex.substr(0, 2), 16) * (1 - factor));
-              const g = Math.max(0, parseInt(hex.substr(2, 2), 16) * (1 - factor));
-              const b = Math.max(0, parseInt(hex.substr(4, 2), 16) * (1 - factor));
-              return `#${Math.floor(r).toString(16).padStart(2, '0')}${Math.floor(g).toString(16).padStart(2, '0')}${Math.floor(b).toString(16).padStart(2, '0')}`;
-            },
+              // Position left children with collision detection
+              this.positionChildrenSide(
+                leftChildren,
+                node,
+                -minHorizontalSpacing,
+                minVerticalSpacing,
+                'left'
+              );
 
-            createConnection(fromNodeId, toNodeId) {
-              const fromNodeData = this.nodeMap[fromNodeId];
-              const toNodeData = this.nodeMap[toNodeId];
+              // Position right children with collision detection
+              this.positionChildrenSide(
+                rightChildren,
+                node,
+                minHorizontalSpacing,
+                minVerticalSpacing,
+                'right'
+              );
+            } else {
+              // For non-root nodes, continue the left-right pattern
+              const isLeftSide = node.position.x < this.treeStructure.position.x;
+              const direction = isLeftSide ? -1 : 1;
 
-              if (!fromNodeData || !toNodeData) return;
+              this.positionChildrenSide(
+                node.children,
+                node,
+                direction * minHorizontalSpacing,
+                minVerticalSpacing,
+                isLeftSide ? 'left' : 'right'
+              );
+            }
+          },
 
-              // Calculate connection points (center of node positions)
-              const fromCenter = {
-                x: fromNodeData.position.x,
-                y: fromNodeData.position.y
-              };
-              const toCenter = {
-                x: toNodeData.position.x,
-                y: toNodeData.position.y
-              };
+          positionChildrenSide(children, parentNode, horizontalOffset, minVerticalSpacing, side) {
+            if (children.length === 0) return;
 
-              // Create line connecting the nodes
-              const line = new fabric.Line([
-                fromCenter.x, fromCenter.y,
-                toCenter.x, toCenter.y
-              ], {
-                stroke: '#374151',
+            // Calculate total height needed for all children
+            let totalHeight = 0;
+            children.forEach(child => {
+              totalHeight += child.dimensions.height + minVerticalSpacing;
+            });
+            totalHeight -= minVerticalSpacing; // Remove last spacing
+
+            // Start positioning from the top
+            let currentY = parentNode.position.y - totalHeight / 2;
+
+            children.forEach((child, index) => {
+              // Try to position the child
+              let attempts = 0;
+              let positioned = false;
+              
+              while (!positioned && attempts < 10) {
+                const proposedPosition = {
+                  x: parentNode.position.x + horizontalOffset,
+                  y: currentY + child.dimensions.height / 2
+                };
+
+                // Check for collisions with existing nodes
+                if (!this.checkCollision(child, proposedPosition)) {
+                  child.position = proposedPosition;
+                  positioned = true;
+                } else {
+                  // If collision, try adjusting position
+                  currentY += child.dimensions.height * 0.5;
+                  attempts++;
+                }
+              }
+
+              // If still not positioned, force position (fallback)
+              if (!positioned) {
+                child.position = {
+                  x: parentNode.position.x + horizontalOffset,
+                  y: currentY + child.dimensions.height / 2
+                };
+              }
+
+              // Move to next position
+              currentY += child.dimensions.height + minVerticalSpacing;
+
+              // Recursively position children
+              this.positionChildrenWithCollisionDetection(child);
+            });
+          },
+
+          checkCollision(node, proposedPosition) {
+            // Check collision with all existing positioned nodes
+            return Object.values(this.nodeMap).some(existingNode => {
+              if (existingNode.id === node.id || !existingNode.position) return false;
+              
+              const dx = Math.abs(proposedPosition.x - existingNode.position.x);
+              const dy = Math.abs(proposedPosition.y - existingNode.position.y);
+              
+              const minDistanceX = (node.dimensions.width + existingNode.dimensions.width) / 2 + 20; // 20px buffer
+              const minDistanceY = (node.dimensions.height + existingNode.dimensions.height) / 2 + 20; // 20px buffer
+              
+              return dx < minDistanceX && dy < minDistanceY;
+            });
+          },
+
+          renderNodes() {
+            // Render all nodes
+            Object.values(this.nodeMap).forEach((nodeData) => {
+              this.createNode(nodeData);
+            });
+          },
+
+          createNode(nodeData) {
+            const isRoot = nodeData.parent === null;
+            const fontSize = isRoot ? 16 : 12;
+            const colors = [
+              "#3b82f6",
+              "#10b981",
+              "#f59e0b",
+              "#ef4444",
+              "#8b5cf6",
+              "#06b6d4",
+              "#84cc16",
+              "#f97316",
+              "#ec4899",
+              "#6366f1",
+            ];
+            const colorIndex = nodeData.level % colors.length;
+            const fillColor = colors[colorIndex];
+            const strokeColor = this.darkenColor(fillColor, 0.2);
+
+            // Use pre-calculated dimensions
+            const boxWidth = nodeData.dimensions.width;
+            const boxHeight = nodeData.dimensions.height;
+            const cornerRadius = isRoot ? 12 : 8;
+
+            // Create text object
+            const nodeText = new fabric.Text(nodeData.text, {
+              left: 0,
+              top: 0,
+              fontSize: fontSize,
+              fill: "white",
+              fontWeight: "bold",
+              originX: "center",
+              originY: "center",
+              textAlign: "center",
+            });
+
+            // Create rounded rectangle box
+            const nodeBox = new fabric.Rect({
+              left: 0,
+              top: 0,
+              width: boxWidth,
+              height: boxHeight,
+              fill: fillColor,
+              stroke: strokeColor,
+              strokeWidth: isRoot ? 3 : 2,
+              rx: cornerRadius,
+              ry: cornerRadius,
+              originX: "center",
+              originY: "center",
+            });
+
+            // Create group
+            const nodeGroup = new fabric.Group([nodeBox, nodeText], {
+              left: nodeData.position.x,
+              top: nodeData.position.y,
+              originX: "center",
+              originY: "center",
+              selectable: true,
+              hasControls: true,
+              hasBorders: true,
+            });
+
+            // Store reference
+            this.nodes[nodeData.id] = nodeGroup;
+            this.canvas.add(nodeGroup);
+          },
+
+          createAllConnections() {
+            // Create connections between parent and child nodes
+            Object.values(this.nodeMap).forEach((nodeData) => {
+              if (nodeData.parent !== null) {
+                this.createConnection(nodeData.parent, nodeData.id);
+              }
+            });
+          },
+
+          darkenColor(color, factor) {
+            // Simple color darkening function
+            const hex = color.replace("#", "");
+            const r = Math.max(
+              0,
+              parseInt(hex.substr(0, 2), 16) * (1 - factor),
+            );
+            const g = Math.max(
+              0,
+              parseInt(hex.substr(2, 2), 16) * (1 - factor),
+            );
+            const b = Math.max(
+              0,
+              parseInt(hex.substr(4, 2), 16) * (1 - factor),
+            );
+            return `#${Math.floor(r).toString(16).padStart(2, "0")}${Math.floor(g).toString(16).padStart(2, "0")}${Math.floor(b).toString(16).padStart(2, "0")}`;
+          },
+
+          createConnection(fromNodeId, toNodeId) {
+            const fromNodeData = this.nodeMap[fromNodeId];
+            const toNodeData = this.nodeMap[toNodeId];
+
+            if (!fromNodeData || !toNodeData) return;
+
+            // Calculate connection points (center of node positions)
+            const fromCenter = {
+              x: fromNodeData.position.x,
+              y: fromNodeData.position.y,
+            };
+            const toCenter = {
+              x: toNodeData.position.x,
+              y: toNodeData.position.y,
+            };
+
+            // Create line connecting the nodes
+            const line = new fabric.Line(
+              [fromCenter.x, fromCenter.y, toCenter.x, toCenter.y],
+              {
+                stroke: "#374151",
                 strokeWidth: 2,
                 selectable: false,
-                evented: false
+                evented: false,
+              },
+            );
+
+            // Store connection info
+            this.connections.push({
+              line: line,
+              from: fromNodeId,
+              to: toNodeId,
+            });
+
+            this.canvas.add(line);
+          },
+
+          updateConnections() {
+            this.connections.forEach((connection) => {
+              const fromGroup = this.nodes[connection.from];
+              const toGroup = this.nodes[connection.to];
+
+              // Since groups have originX: 'center' and originY: 'center',
+              // the left/top properties represent the center position
+              const fromCenter = {
+                x: fromGroup.left,
+                y: fromGroup.top,
+              };
+              const toCenter = {
+                x: toGroup.left,
+                y: toGroup.top,
+              };
+
+              connection.line.set({
+                x1: fromCenter.x,
+                y1: fromCenter.y,
+                x2: toCenter.x,
+                y2: toCenter.y,
               });
+            });
 
-              // Store connection info
-              this.connections.push({
-                line: line,
-                from: fromNodeId,
-                to: toNodeId
+            this.canvas.renderAll();
+          },
+
+          setupMovementHandlers() {
+            // Add movement handlers to all groups
+            Object.values(this.nodes).forEach((group) => {
+              group.on("moving", () => {
+                this.updateConnections();
               });
-
-              this.canvas.add(line);
-            },
-
-            updateConnections() {
-              this.connections.forEach(connection => {
-                const fromGroup = this.nodes[connection.from];
-                const toGroup = this.nodes[connection.to];
-
-                const fromCenter = {
-                  x: fromGroup.left + fromGroup.width / 2,
-                  y: fromGroup.top + fromGroup.height / 2
-                };
-                const toCenter = {
-                  x: toGroup.left + toGroup.width / 2,
-                  y: toGroup.top + toGroup.height / 2
-                };
-
-                connection.line.set({
-                  x1: fromCenter.x,
-                  y1: fromCenter.y,
-                  x2: toCenter.x,
-                  y2: toCenter.y
-                });
+              group.on("moved", () => {
+                this.updateConnections();
               });
+            });
+          },
 
-              this.canvas.renderAll();
-            },
-
-            setupMovementHandlers() {
-              // Add movement handlers to all groups
-              Object.values(this.nodes).forEach(group => {
-                group.on('moving', () => {
-                  this.updateConnections();
-                });
-                group.on('moved', () => {
-                  this.updateConnections();
-                });
+          setupResizeHandler() {
+            window.addEventListener("resize", () => {
+              this.canvas.setDimensions({
+                width: window.innerWidth,
+                height: window.innerHeight,
               });
-            },
-
-            setupResizeHandler() {
-              window.addEventListener('resize', () => {
-                this.canvas.setDimensions({
-                  width: window.innerWidth,
-                  height: window.innerHeight
-                });
-                this.createMindMap();
-              });
-            }
-          }));
-        });
+              this.createMindMap();
+            });
+          },
+        }));
+      });
     </script>
   </body>
 </html>
