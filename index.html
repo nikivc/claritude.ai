@@ -43,32 +43,39 @@
         {
           id: "id1",
           text: "main idea",
-          parent: null; // This is the root item
-        },{
+          parent: null // This is the root item
+        },
+        {
           id: "id2",
           text: "Branch A",
-          parent: "1";
-        },{
+          parent: "id1"
+        },
+        {
           id: "id3",
           text: "Branch B",
-          parent: "1";
-        },{
+          parent: "id1"
+        },
+        {
           id: "id4",
           text: "Branch C",
-          parent: "1";
-        },{
+          parent: "id1"
+        },
+        {
           id: "id5",
           text: "Another level A",
-          parent: "2";
-        },{
-          id: "id6",
-          text: "Another level A",
-          parent: "2";
-        },{
-          id: "id7",
-          text: "Another level A",
-          parent: "3";
+          parent: "id2"
         },
+        {
+          id: "id6",
+          text: "Another level B",
+          parent: "id2"
+        },
+        {
+          id: "id7",
+          text: "Another level C",
+          parent: "id3"
+        }
+      ];
 
 
         document.addEventListener('alpine:init', () => {
@@ -101,179 +108,17 @@
               this.nodes = {};
               this.connections = [];
 
-              // Central node (main idea)
-              const centralNode = new fabric.Circle({
-                left: 0,
-                top: 0,
-                radius: 50,
-                fill: '#3b82f6',
-                stroke: '#1e40af',
-                strokeWidth: 3,
-                originX: 'center',
-                originY: 'center'
-              });
-
-              // Central text
-              const centralText = new fabric.Text('Main Idea', {
-                left: 0,
-                top: 0,
-                fontSize: 16,
-                fill: 'white',
-                fontWeight: 'bold',
-                originX: 'center',
-                originY: 'center'
-              });
-
-              // Create central group
-              const centralGroup = new fabric.Group([centralNode, centralText], {
-                left: this.canvas.width / 2,
-                top: this.canvas.height / 2,
-                selectable: true,
-                hasControls: true,
-                hasBorders: true
-              });
-
-              // Branch 1 - Top
-              const branch1Node = new fabric.Circle({
-                left: 0,
-                top: 0,
-                radius: 30,
-                fill: '#10b981',
-                stroke: '#059669',
-                strokeWidth: 2,
-                originX: 'center',
-                originY: 'center'
-              });
-
-              const branch1Text = new fabric.Text('Branch 1', {
-                left: 0,
-                top: 0,
-                fontSize: 12,
-                fill: 'white',
-                fontWeight: 'bold',
-                originX: 'center',
-                originY: 'center'
-              });
-
-              // Create branch1 group
-              const branch1Group = new fabric.Group([branch1Node, branch1Text], {
-                left: this.canvas.width / 2,
-                top: this.canvas.height / 2 - 100,
-                selectable: true,
-                hasControls: true,
-                hasBorders: true
-              });
-
-              // Branch 2 - Right
-              const branch2Node = new fabric.Circle({
-                left: 0,
-                top: 0,
-                radius: 30,
-                fill: '#f59e0b',
-                stroke: '#d97706',
-                strokeWidth: 2,
-                originX: 'center',
-                originY: 'center'
-              });
-
-              const branch2Text = new fabric.Text('Branch 2', {
-                left: 0,
-                top: 0,
-                fontSize: 12,
-                fill: 'white',
-                fontWeight: 'bold',
-                originX: 'center',
-                originY: 'center'
-              });
-
-              // Create branch2 group
-              const branch2Group = new fabric.Group([branch2Node, branch2Text], {
-                left: this.canvas.width / 2 + 150,
-                top: this.canvas.height / 2,
-                selectable: true,
-                hasControls: true,
-                hasBorders: true
-              });
-
-              // Branch 3 - Bottom
-              const branch3Node = new fabric.Circle({
-                left: 0,
-                top: 0,
-                radius: 30,
-                fill: '#ef4444',
-                stroke: '#dc2626',
-                strokeWidth: 2,
-                originX: 'center',
-                originY: 'center'
-              });
-
-              const branch3Text = new fabric.Text('Branch 3', {
-                left: 0,
-                top: 0,
-                fontSize: 12,
-                fill: 'white',
-                fontWeight: 'bold',
-                originX: 'center',
-                originY: 'center'
-              });
-
-              // Create branch3 group
-              const branch3Group = new fabric.Group([branch3Node, branch3Text], {
-                left: this.canvas.width / 2,
-                top: this.canvas.height / 2 + 150,
-                selectable: true,
-                hasControls: true,
-                hasBorders: true
-              });
-
-              // Branch 4 - Left
-              const branch4Node = new fabric.Circle({
-                left: 0,
-                top: 0,
-                radius: 30,
-                fill: '#8b5cf6',
-                stroke: '#7c3aed',
-                strokeWidth: 2,
-                originX: 'center',
-                originY: 'center'
-              });
-
-              const branch4Text = new fabric.Text('Branch 4', {
-                left: 0,
-                top: 0,
-                fontSize: 12,
-                fill: 'white',
-                fontWeight: 'bold',
-                originX: 'center',
-                originY: 'center'
-              });
-
-              // Create branch4 group
-              const branch4Group = new fabric.Group([branch4Node, branch4Text], {
-                left: this.canvas.width / 2 - 150,
-                top: this.canvas.height / 2,
-                selectable: true,
-                hasControls: true,
-                hasBorders: true
-              });
-
-              // Store groups for connection management
-              this.nodes.central = centralGroup;
-              this.nodes.branch1 = branch1Group;
-              this.nodes.branch2 = branch2Group;
-              this.nodes.branch3 = branch3Group;
-              this.nodes.branch4 = branch4Group;
-
-              // Create connections
-              this.createConnection('central', 'branch1');
-              this.createConnection('central', 'branch2');
-              this.createConnection('central', 'branch3');
-              this.createConnection('central', 'branch4');
-
-              // Add all groups to canvas
-              Object.values(this.nodes).forEach(group => {
-                this.canvas.add(group);
-              });
+              // Build tree structure from mindMapNodes
+              this.buildTreeStructure();
+              
+              // Calculate positions for all nodes
+              this.calculateNodePositions();
+              
+              // Create connections between nodes FIRST (so they render behind)
+              this.createAllConnections();
+              
+              // Render all nodes AFTER connections (so they render on top)
+              this.renderNodes();
 
               // Set up movement handlers for dynamic connections
               this.setupMovementHandlers();
@@ -282,18 +127,173 @@
               this.canvas.renderAll();
             },
 
-            createConnection(fromNodeId, toNodeId) {
-              const fromGroup = this.nodes[fromNodeId];
-              const toGroup = this.nodes[toNodeId];
+            buildTreeStructure() {
+              // Create a map for quick lookup
+              this.nodeMap = {};
+              this.treeStructure = {};
 
-              // Calculate connection points (center of groups)
+              // First pass: create node map
+              mindmapNodes.forEach(node => {
+                this.nodeMap[node.id] = {
+                  ...node,
+                  children: [],
+                  level: 0,
+                  position: { x: 0, y: 0 }
+                };
+              });
+
+              // Second pass: build tree structure
+              mindmapNodes.forEach(node => {
+                if (node.parent === null) {
+                  this.treeStructure = this.nodeMap[node.id];
+                  this.treeStructure.level = 0;
+                } else if (this.nodeMap[node.parent]) {
+                  this.nodeMap[node.parent].children.push(this.nodeMap[node.id]);
+                  this.nodeMap[node.id].level = this.nodeMap[node.parent].level + 1;
+                }
+              });
+            },
+
+            calculateNodePositions() {
+              if (!this.treeStructure) return;
+
+              const centerX = this.canvas.width / 2;
+              const centerY = this.canvas.height / 2;
+              const levelSpacing = 200;
+              const siblingSpacing = 150;
+
+              // Position root node at center
+              this.treeStructure.position = { x: centerX, y: centerY };
+
+              // Position children recursively
+              this.positionChildren(this.treeStructure, levelSpacing, siblingSpacing);
+            },
+
+            positionChildren(node, levelSpacing, siblingSpacing) {
+              if (!node.children || node.children.length === 0) return;
+
+              const childCount = node.children.length;
+              const startAngle = -Math.PI / 2; // Start from top
+              const angleStep = (2 * Math.PI) / childCount;
+
+              node.children.forEach((child, index) => {
+                const angle = startAngle + (index * angleStep);
+                const distance = levelSpacing;
+                
+                child.position = {
+                  x: node.position.x + Math.cos(angle) * distance,
+                  y: node.position.y + Math.sin(angle) * distance
+                };
+
+                // Recursively position grandchildren
+                this.positionChildren(child, levelSpacing * 0.8, siblingSpacing);
+              });
+            },
+
+            renderNodes() {
+              // Render all nodes
+              Object.values(this.nodeMap).forEach(nodeData => {
+                this.createNode(nodeData);
+              });
+            },
+
+            createNode(nodeData) {
+              const isRoot = nodeData.parent === null;
+              const fontSize = isRoot ? 16 : 12;
+              const colors = [
+                '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', 
+                '#06b6d4', '#84cc16', '#f97316', '#ec4899', '#6366f1'
+              ];
+              const colorIndex = nodeData.level % colors.length;
+              const fillColor = colors[colorIndex];
+              const strokeColor = this.darkenColor(fillColor, 0.2);
+
+              // Calculate text dimensions using canvas context
+              const canvas = document.createElement('canvas');
+              const ctx = canvas.getContext('2d');
+              ctx.font = `bold ${fontSize}px Arial`;
+              const textMetrics = ctx.measureText(nodeData.text);
+              const textWidth = textMetrics.width;
+              const textHeight = fontSize * 1.2; // Approximate line height
+              
+              const padding = isRoot ? 20 : 15;
+              const boxWidth = Math.max(textWidth + padding * 2, isRoot ? 120 : 80);
+              const boxHeight = textHeight + padding * 2;
+              const cornerRadius = isRoot ? 12 : 8;
+
+              // Create text object
+              const nodeText = new fabric.Text(nodeData.text, {
+                left: 0,
+                top: 0,
+                fontSize: fontSize,
+                fill: 'white',
+                fontWeight: 'bold',
+                originX: 'center',
+                originY: 'center',
+                textAlign: 'center'
+              });
+
+              // Create rounded rectangle box
+              const nodeBox = new fabric.Rect({
+                left: 0,
+                top: 0,
+                width: boxWidth,
+                height: boxHeight,
+                fill: fillColor,
+                stroke: strokeColor,
+                strokeWidth: isRoot ? 3 : 2,
+                rx: cornerRadius,
+                ry: cornerRadius,
+                originX: 'center',
+                originY: 'center'
+              });
+
+              // Create group
+              const nodeGroup = new fabric.Group([nodeBox, nodeText], {
+                left: nodeData.position.x,
+                top: nodeData.position.y,
+                selectable: true,
+                hasControls: true,
+                hasBorders: true
+              });
+
+              // Store reference
+              this.nodes[nodeData.id] = nodeGroup;
+              this.canvas.add(nodeGroup);
+            },
+
+            createAllConnections() {
+              // Create connections between parent and child nodes
+              Object.values(this.nodeMap).forEach(nodeData => {
+                if (nodeData.parent !== null) {
+                  this.createConnection(nodeData.parent, nodeData.id);
+                }
+              });
+            },
+
+            darkenColor(color, factor) {
+              // Simple color darkening function
+              const hex = color.replace('#', '');
+              const r = Math.max(0, parseInt(hex.substr(0, 2), 16) * (1 - factor));
+              const g = Math.max(0, parseInt(hex.substr(2, 2), 16) * (1 - factor));
+              const b = Math.max(0, parseInt(hex.substr(4, 2), 16) * (1 - factor));
+              return `#${Math.floor(r).toString(16).padStart(2, '0')}${Math.floor(g).toString(16).padStart(2, '0')}${Math.floor(b).toString(16).padStart(2, '0')}`;
+            },
+
+            createConnection(fromNodeId, toNodeId) {
+              const fromNodeData = this.nodeMap[fromNodeId];
+              const toNodeData = this.nodeMap[toNodeId];
+
+              if (!fromNodeData || !toNodeData) return;
+
+              // Calculate connection points (center of node positions)
               const fromCenter = {
-                x: fromGroup.left + fromGroup.width / 2,
-                y: fromGroup.top + fromGroup.height / 2
+                x: fromNodeData.position.x,
+                y: fromNodeData.position.y
               };
               const toCenter = {
-                x: toGroup.left + toGroup.width / 2,
-                y: toGroup.top + toGroup.height / 2
+                x: toNodeData.position.x,
+                y: toNodeData.position.y
               };
 
               // Create line connecting the nodes
