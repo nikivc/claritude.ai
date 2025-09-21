@@ -20,7 +20,7 @@
   <body class="h-full w-full" x-data="mindMap">
     <!-- Mind Map Canvas -->
     <div class="h-full w-full">
-      <canvas id="mindmap-canvas" class="h-full w-full"></canvas>
+      <canvas id="mindmap-canvas" class="h-full w-full cursor-move"></canvas>
     </div>
 
     <!-- Chat Input -->
@@ -84,11 +84,114 @@
           text: "9",
           parent: "id3",
         },
+        {
+          id: "id10",
+          text: "Technology",
+          parent: "id4",
+        },
+        {
+          id: "id11",
+          text: "Innovation",
+          parent: "id4",
+        },
+        {
+          id: "id12",
+          text: "AI",
+          parent: "id10",
+        },
+        {
+          id: "id13",
+          text: "Machine Learning",
+          parent: "id10",
+        },
+        {
+          id: "id14",
+          text: "Blockchain",
+          parent: "id10",
+        },
+        {
+          id: "id15",
+          text: "Startups",
+          parent: "id11",
+        },
+        {
+          id: "id16",
+          text: "Research",
+          parent: "id11",
+        },
+        {
+          id: "id17",
+          text: "Deep Learning",
+          parent: "id13",
+        },
+        {
+          id: "id18",
+          text: "Neural Networks",
+          parent: "id13",
+        },
+        {
+          id: "id19",
+          text: "Cryptocurrency",
+          parent: "id14",
+        },
+        {
+          id: "id20",
+          text: "Smart Contracts",
+          parent: "id14",
+        },
+        {
+          id: "id21",
+          text: "Venture Capital",
+          parent: "id15",
+        },
+        {
+          id: "id22",
+          text: "Product Development",
+          parent: "id15",
+        },
+        {
+          id: "id23",
+          text: "Academic Papers",
+          parent: "id16",
+        },
+        {
+          id: "id24",
+          text: "Experiments",
+          parent: "id16",
+        },
+        {
+          id: "id25",
+          text: "Computer Vision",
+          parent: "id17",
+        },
+        {
+          id: "id26",
+          text: "Natural Language",
+          parent: "id17",
+        },
+        {
+          id: "id27",
+          text: "CNN",
+          parent: "id18",
+        },
+        {
+          id: "id28",
+          text: "RNN",
+          parent: "id18",
+        },
+        {
+          id: "id29",
+          text: "Bitcoin",
+          parent: "id19",
+        },
       ];
 
       document.addEventListener("alpine:init", () => {
         Alpine.data("mindMap", () => ({
           canvas: null,
+          isPanning: false,
+          lastPanPoint: { x: 0, y: 0 },
+          viewportTransform: [1, 0, 0, 1, 0, 0],
 
           init() {
             this.$nextTick(() => {
@@ -97,18 +200,30 @@
           },
 
           initCanvas() {
-            // Initialize Fabric.js canvas
+            // Initialize Fabric.js canvas with Alpine.js compatibility
             this.canvas = new fabric.Canvas("mindmap-canvas", {
               width: window.innerWidth,
               height: window.innerHeight,
               backgroundColor: "#f8fafc",
+              selection: true,
+              preserveObjectStacking: true,
             });
+
+            // Initialize viewport transform to match canvas
+            this.viewportTransform = this.canvas.viewportTransform.slice();
+            console.log("Initial viewport transform:", this.viewportTransform);
+
+            // Set up Fabric.js mouse events for panning
+            this.setupFabricPanning();
 
             this.createMindMap();
             this.setupResizeHandler();
           },
 
           createMindMap() {
+            // Store current viewport transform
+            const currentTransform = this.canvas.viewportTransform.slice();
+
             // Clear canvas
             this.canvas.clear();
 
@@ -130,6 +245,10 @@
 
             // Set up movement handlers for dynamic connections
             this.setupMovementHandlers();
+
+            // Restore viewport transform
+            this.canvas.setViewportTransform(currentTransform);
+            this.viewportTransform = currentTransform;
 
             // Render the canvas
             this.canvas.renderAll();
@@ -168,15 +287,18 @@
 
             const centerX = this.canvas.width / 2;
             const centerY = this.canvas.height / 2;
-            
+
             // Calculate node dimensions first
             this.calculateNodeDimensions();
+
+            // Calculate subtree dimensions for better spacing
+            this.calculateSubtreeDimensions(this.treeStructure);
 
             // Position root node at center
             this.treeStructure.position = { x: centerX, y: centerY };
 
-            // Position children recursively with collision detection
-            this.positionChildrenWithCollisionDetection(this.treeStructure);
+            // Position children using improved hierarchical algorithm
+            this.positionChildrenHierarchically(this.treeStructure);
           },
 
           calculateNodeDimensions() {
@@ -184,7 +306,7 @@
             Object.values(this.nodeMap).forEach((nodeData) => {
               const isRoot = nodeData.parent === null;
               const fontSize = isRoot ? 16 : 12;
-              
+
               // Calculate text dimensions
               const canvas = document.createElement("canvas");
               const ctx = canvas.getContext("2d");
@@ -194,141 +316,149 @@
               const textHeight = fontSize * 1.2;
 
               const padding = isRoot ? 20 : 15;
-              const boxWidth = Math.max(textWidth + padding * 2, isRoot ? 120 : 80);
+              const boxWidth = Math.max(
+                textWidth + padding * 2,
+                isRoot ? 120 : 80,
+              );
               const boxHeight = textHeight + padding * 2;
 
               nodeData.dimensions = {
                 width: boxWidth,
                 height: boxHeight,
-                padding: padding
+                padding: padding,
               };
             });
           },
 
-          positionChildrenWithCollisionDetection(node) {
+          calculateSubtreeDimensions(node) {
+            // Calculate the total dimensions needed for this node's subtree
+            if (!node.children || node.children.length === 0) {
+              // Leaf node: dimensions are just the node itself
+              node.subtreeDimensions = {
+                width: node.dimensions.width,
+                height: node.dimensions.height,
+                centerY: node.dimensions.height / 2,
+              };
+              return;
+            }
+
+            // Calculate dimensions for all children first
+            node.children.forEach(child => this.calculateSubtreeDimensions(child));
+
+            // Calculate spacing based on level and number of children
+            const levelSpacing = Math.max(200, 150 + node.level * 20);
+            const verticalSpacing = Math.max(60, 40 + node.level * 10);
+
+            // For root node, split children between left and right
+            let leftChildren = [];
+            let rightChildren = [];
+
+            if (node.level === 0) {
+              // Root level: distribute children evenly between left and right
+              const midPoint = Math.ceil(node.children.length / 2);
+              leftChildren = node.children.slice(0, midPoint);
+              rightChildren = node.children.slice(midPoint);
+            } else {
+              // Non-root: determine side based on parent position
+              const isLeftSide = node.position && node.position.x < this.treeStructure.position.x;
+              if (isLeftSide) {
+                leftChildren = node.children;
+              } else {
+                rightChildren = node.children;
+              }
+            }
+
+            // Calculate dimensions for left and right subtrees
+            const leftDimensions = this.calculateSideDimensions(leftChildren, verticalSpacing);
+            const rightDimensions = this.calculateSideDimensions(rightChildren, verticalSpacing);
+
+            // Total width includes both sides plus level spacing
+            const totalWidth = leftDimensions.width + levelSpacing + rightDimensions.width;
+            // Total height is the maximum of both sides
+            const totalHeight = Math.max(leftDimensions.height, rightDimensions.height, node.dimensions.height);
+
+            node.subtreeDimensions = {
+              width: totalWidth,
+              height: totalHeight,
+              centerY: totalHeight / 2,
+              leftWidth: leftDimensions.width,
+              rightWidth: rightDimensions.width,
+              levelSpacing: levelSpacing,
+              verticalSpacing: verticalSpacing,
+            };
+          },
+
+          calculateSideDimensions(children, verticalSpacing) {
+            if (children.length === 0) {
+              return { width: 0, height: 0 };
+            }
+
+            let totalWidth = 0;
+            let totalHeight = 0;
+
+            children.forEach(child => {
+              totalWidth = Math.max(totalWidth, child.subtreeDimensions.width);
+              totalHeight += child.subtreeDimensions.height + verticalSpacing;
+            });
+
+            totalHeight -= verticalSpacing; // Remove last spacing
+
+            return { width: totalWidth, height: totalHeight };
+          },
+
+          positionChildrenHierarchically(node) {
             if (!node.children || node.children.length === 0) return;
 
-            const childCount = node.children.length;
-            const isRoot = node.parent === null;
-            
-            // Calculate spacing based on node dimensions
-            const minHorizontalSpacing = Math.max(
-              200, // Minimum horizontal spacing
-              node.dimensions.width * 1.5 // At least 1.5x the parent width
-            );
-            const minVerticalSpacing = Math.max(
-              80, // Minimum vertical spacing
-              node.dimensions.height * 1.2 // At least 1.2x the parent height
-            );
+            const isRoot = node.level === 0;
 
             if (isRoot) {
               // For root node, split children between left and right sides
-              const leftChildren = [];
-              const rightChildren = [];
+              const midPoint = Math.ceil(node.children.length / 2);
+              const leftChildren = node.children.slice(0, midPoint);
+              const rightChildren = node.children.slice(midPoint);
 
-              node.children.forEach((child, index) => {
-                if (index < Math.ceil(childCount / 2)) {
-                  leftChildren.push(child);
-                } else {
-                  rightChildren.push(child);
-                }
-              });
+              // Position left children
+              this.positionChildrenOnSide(leftChildren, node, -1);
 
-              // Position left children with collision detection
-              this.positionChildrenSide(
-                leftChildren,
-                node,
-                -minHorizontalSpacing,
-                minVerticalSpacing,
-                'left'
-              );
-
-              // Position right children with collision detection
-              this.positionChildrenSide(
-                rightChildren,
-                node,
-                minHorizontalSpacing,
-                minVerticalSpacing,
-                'right'
-              );
+              // Position right children
+              this.positionChildrenOnSide(rightChildren, node, 1);
             } else {
-              // For non-root nodes, continue the left-right pattern
-              const isLeftSide = node.position.x < this.treeStructure.position.x;
-              const direction = isLeftSide ? -1 : 1;
-
-              this.positionChildrenSide(
-                node.children,
-                node,
-                direction * minHorizontalSpacing,
-                minVerticalSpacing,
-                isLeftSide ? 'left' : 'right'
-              );
+              // For non-root nodes, all children go to the same side
+              const direction = node.position.x < this.treeStructure.position.x ? -1 : 1;
+              this.positionChildrenOnSide(node.children, node, direction);
             }
           },
 
-          positionChildrenSide(children, parentNode, horizontalOffset, minVerticalSpacing, side) {
+          positionChildrenOnSide(children, parentNode, direction) {
             if (children.length === 0) return;
 
-            // Calculate total height needed for all children
-            let totalHeight = 0;
-            children.forEach(child => {
-              totalHeight += child.dimensions.height + minVerticalSpacing;
-            });
-            totalHeight -= minVerticalSpacing; // Remove last spacing
+            const subtreeDims = parentNode.subtreeDimensions;
+            const levelSpacing = subtreeDims.levelSpacing;
+            const verticalSpacing = subtreeDims.verticalSpacing;
+
+            // Calculate the starting X position based on direction
+            const startX = parentNode.position.x + direction * levelSpacing;
+
+            // Calculate total height of all children
+            const totalHeight = children.reduce((sum, child, index) => {
+              return sum + child.subtreeDimensions.height + (index < children.length - 1 ? verticalSpacing : 0);
+            }, 0);
 
             // Start positioning from the top
             let currentY = parentNode.position.y - totalHeight / 2;
 
-            children.forEach((child, index) => {
-              // Try to position the child
-              let attempts = 0;
-              let positioned = false;
-              
-              while (!positioned && attempts < 10) {
-                const proposedPosition = {
-                  x: parentNode.position.x + horizontalOffset,
-                  y: currentY + child.dimensions.height / 2
-                };
+            children.forEach((child) => {
+              // Position child at the center of its subtree height
+              child.position = {
+                x: startX,
+                y: currentY + child.subtreeDimensions.centerY,
+              };
 
-                // Check for collisions with existing nodes
-                if (!this.checkCollision(child, proposedPosition)) {
-                  child.position = proposedPosition;
-                  positioned = true;
-                } else {
-                  // If collision, try adjusting position
-                  currentY += child.dimensions.height * 0.5;
-                  attempts++;
-                }
-              }
+              // Move down for next child
+              currentY += child.subtreeDimensions.height + verticalSpacing;
 
-              // If still not positioned, force position (fallback)
-              if (!positioned) {
-                child.position = {
-                  x: parentNode.position.x + horizontalOffset,
-                  y: currentY + child.dimensions.height / 2
-                };
-              }
-
-              // Move to next position
-              currentY += child.dimensions.height + minVerticalSpacing;
-
-              // Recursively position children
-              this.positionChildrenWithCollisionDetection(child);
-            });
-          },
-
-          checkCollision(node, proposedPosition) {
-            // Check collision with all existing positioned nodes
-            return Object.values(this.nodeMap).some(existingNode => {
-              if (existingNode.id === node.id || !existingNode.position) return false;
-              
-              const dx = Math.abs(proposedPosition.x - existingNode.position.x);
-              const dy = Math.abs(proposedPosition.y - existingNode.position.y);
-              
-              const minDistanceX = (node.dimensions.width + existingNode.dimensions.width) / 2 + 20; // 20px buffer
-              const minDistanceY = (node.dimensions.height + existingNode.dimensions.height) / 2 + 20; // 20px buffer
-              
-              return dx < minDistanceX && dy < minDistanceY;
+              // Recursively position this child's children
+              this.positionChildrenHierarchically(child);
             });
           },
 
@@ -516,6 +646,117 @@
                 height: window.innerHeight,
               });
               this.createMindMap();
+            });
+          },
+
+          handleContextMenu(event) {
+            console.log("Context menu prevented");
+            event.preventDefault();
+            event.stopPropagation();
+            return false;
+          },
+
+          setupFabricPanning() {
+            console.log(
+              "Setting up Fabric.js v6 panning with Alpine.js compatibility...",
+            );
+
+            // Store panning state
+            this.isPanning = false;
+            this.lastPanPoint = { x: 0, y: 0 };
+
+            // Use Alpine.js $nextTick to ensure DOM is ready
+            this.$nextTick(() => {
+              const canvasElement = this.canvas.getElement();
+              const upperCanvas = this.canvas.upperCanvasEl;
+
+              // Prevent context menu on all canvas-related elements
+              const preventContextMenu = (e) => {
+                if (e.target === canvasElement || e.target === upperCanvas ||
+                    canvasElement.contains(e.target) || (upperCanvas && upperCanvas.contains(e.target))) {
+                  console.log("Context menu prevented on canvas");
+                  e.preventDefault();
+                  e.stopPropagation();
+                  return false;
+                }
+              };
+
+              // Add to multiple levels to ensure it works
+              document.addEventListener("contextmenu", preventContextMenu, true);
+              window.addEventListener("contextmenu", preventContextMenu, true);
+              canvasElement.addEventListener("contextmenu", preventContextMenu, true);
+              if (upperCanvas) {
+                upperCanvas.addEventListener("contextmenu", preventContextMenu, true);
+              }
+
+              // Use DOM events directly on the upper canvas (interaction layer)
+              const targetElement = upperCanvas || canvasElement;
+
+              targetElement.addEventListener("mousedown", (e) => {
+                if (e.button === 2) {
+                  console.log("Right click detected - starting pan");
+                  this.isPanning = true;
+                  this.lastPanPoint = { x: e.clientX, y: e.clientY };
+
+                  // Update cursor
+                  targetElement.style.cursor = "grabbing";
+                  canvasElement.style.cursor = "grabbing";
+
+                  // Disable text selection
+                  document.body.style.userSelect = "none";
+
+                  e.preventDefault();
+                  e.stopPropagation();
+                }
+              });
+
+              targetElement.addEventListener("mousemove", (e) => {
+                if (this.isPanning) {
+                  const deltaX = e.clientX - this.lastPanPoint.x;
+                  const deltaY = e.clientY - this.lastPanPoint.y;
+
+                  console.log("Panning:", deltaX, deltaY);
+
+                  // Use Fabric.js built-in panning method
+                  this.canvas.relativePan({ x: deltaX, y: deltaY });
+
+                  // Update the last point
+                  this.lastPanPoint = { x: e.clientX, y: e.clientY };
+
+                  e.preventDefault();
+                  e.stopPropagation();
+                }
+              });
+
+              targetElement.addEventListener("mouseup", (e) => {
+                if (e.button === 2 && this.isPanning) {
+                  console.log("Right click up - stopping pan");
+                  this.isPanning = false;
+
+                  // Restore cursor
+                  targetElement.style.cursor = "move";
+                  canvasElement.style.cursor = "move";
+
+                  // Re-enable text selection
+                  document.body.style.userSelect = "";
+
+                  e.preventDefault();
+                  e.stopPropagation();
+                }
+              });
+
+              // Handle mouse leave
+              targetElement.addEventListener("mouseleave", (e) => {
+                if (this.isPanning) {
+                  console.log("Mouse left - stopping pan");
+                  this.isPanning = false;
+                  targetElement.style.cursor = "move";
+                  canvasElement.style.cursor = "move";
+                  document.body.style.userSelect = "";
+                }
+              });
+
+              console.log("Direct DOM event listeners added for panning on upper canvas");
             });
           },
         }));
