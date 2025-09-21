@@ -4,19 +4,26 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>claritude helps you think</title>
+    <script defer src="//cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script
       defer
-      src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"
-    ></script>
-    <script
-      defer
-      src="https://cdn.jsdelivr.net/npm/@tailwindplus/elements@1"
+      src="//cdn.jsdelivr.net/npm/@tailwindplus/elements@1"
       type="module"
     ></script>
     <script defer src="//unpkg.com/alpinejs"></script>
+    <script
+      defer
+      src="//cdn.jsdelivr.net/npm/fabric@6.4.3/dist/index.js"
+    ></script>
   </head>
 
-  <body class="h-full w-full">
+  <body class="h-full w-full" x-data="mindMap">
+    <!-- Mind Map Canvas -->
+    <div class="h-full w-full">
+      <canvas id="mindmap-canvas" class="h-full w-full"></canvas>
+    </div>
+
+    <!-- Chat Input -->
     <div class="fixed inset-x-0 bottom-3 mx-auto w-1/2">
       <div>
         <div class="mt-2">
@@ -29,5 +36,335 @@
         </div>
       </div>
     </div>
+
+    <script>
+
+      const mindmapNodes = [
+        {
+          id: "id1",
+          text: "main idea",
+          parent: null; // This is the root item
+        },{
+          id: "id2",
+          text: "Branch A",
+          parent: "1";
+        },{
+          id: "id3",
+          text: "Branch B",
+          parent: "1";
+        },{
+          id: "id4",
+          text: "Branch C",
+          parent: "1";
+        },{
+          id: "id5",
+          text: "Another level A",
+          parent: "2";
+        },{
+          id: "id6",
+          text: "Another level A",
+          parent: "2";
+        },{
+          id: "id7",
+          text: "Another level A",
+          parent: "3";
+        },
+
+
+        document.addEventListener('alpine:init', () => {
+          Alpine.data('mindMap', () => ({
+            canvas: null,
+
+            init() {
+              this.$nextTick(() => {
+                this.initCanvas();
+              });
+            },
+
+            initCanvas() {
+              // Initialize Fabric.js canvas
+              this.canvas = new fabric.Canvas('mindmap-canvas', {
+                width: window.innerWidth,
+                height: window.innerHeight,
+                backgroundColor: '#f8fafc'
+              });
+
+              this.createMindMap();
+              this.setupResizeHandler();
+            },
+
+            createMindMap() {
+              // Clear canvas
+              this.canvas.clear();
+
+              // Store nodes and connections for dynamic updates
+              this.nodes = {};
+              this.connections = [];
+
+              // Central node (main idea)
+              const centralNode = new fabric.Circle({
+                left: 0,
+                top: 0,
+                radius: 50,
+                fill: '#3b82f6',
+                stroke: '#1e40af',
+                strokeWidth: 3,
+                originX: 'center',
+                originY: 'center'
+              });
+
+              // Central text
+              const centralText = new fabric.Text('Main Idea', {
+                left: 0,
+                top: 0,
+                fontSize: 16,
+                fill: 'white',
+                fontWeight: 'bold',
+                originX: 'center',
+                originY: 'center'
+              });
+
+              // Create central group
+              const centralGroup = new fabric.Group([centralNode, centralText], {
+                left: this.canvas.width / 2,
+                top: this.canvas.height / 2,
+                selectable: true,
+                hasControls: true,
+                hasBorders: true
+              });
+
+              // Branch 1 - Top
+              const branch1Node = new fabric.Circle({
+                left: 0,
+                top: 0,
+                radius: 30,
+                fill: '#10b981',
+                stroke: '#059669',
+                strokeWidth: 2,
+                originX: 'center',
+                originY: 'center'
+              });
+
+              const branch1Text = new fabric.Text('Branch 1', {
+                left: 0,
+                top: 0,
+                fontSize: 12,
+                fill: 'white',
+                fontWeight: 'bold',
+                originX: 'center',
+                originY: 'center'
+              });
+
+              // Create branch1 group
+              const branch1Group = new fabric.Group([branch1Node, branch1Text], {
+                left: this.canvas.width / 2,
+                top: this.canvas.height / 2 - 100,
+                selectable: true,
+                hasControls: true,
+                hasBorders: true
+              });
+
+              // Branch 2 - Right
+              const branch2Node = new fabric.Circle({
+                left: 0,
+                top: 0,
+                radius: 30,
+                fill: '#f59e0b',
+                stroke: '#d97706',
+                strokeWidth: 2,
+                originX: 'center',
+                originY: 'center'
+              });
+
+              const branch2Text = new fabric.Text('Branch 2', {
+                left: 0,
+                top: 0,
+                fontSize: 12,
+                fill: 'white',
+                fontWeight: 'bold',
+                originX: 'center',
+                originY: 'center'
+              });
+
+              // Create branch2 group
+              const branch2Group = new fabric.Group([branch2Node, branch2Text], {
+                left: this.canvas.width / 2 + 150,
+                top: this.canvas.height / 2,
+                selectable: true,
+                hasControls: true,
+                hasBorders: true
+              });
+
+              // Branch 3 - Bottom
+              const branch3Node = new fabric.Circle({
+                left: 0,
+                top: 0,
+                radius: 30,
+                fill: '#ef4444',
+                stroke: '#dc2626',
+                strokeWidth: 2,
+                originX: 'center',
+                originY: 'center'
+              });
+
+              const branch3Text = new fabric.Text('Branch 3', {
+                left: 0,
+                top: 0,
+                fontSize: 12,
+                fill: 'white',
+                fontWeight: 'bold',
+                originX: 'center',
+                originY: 'center'
+              });
+
+              // Create branch3 group
+              const branch3Group = new fabric.Group([branch3Node, branch3Text], {
+                left: this.canvas.width / 2,
+                top: this.canvas.height / 2 + 150,
+                selectable: true,
+                hasControls: true,
+                hasBorders: true
+              });
+
+              // Branch 4 - Left
+              const branch4Node = new fabric.Circle({
+                left: 0,
+                top: 0,
+                radius: 30,
+                fill: '#8b5cf6',
+                stroke: '#7c3aed',
+                strokeWidth: 2,
+                originX: 'center',
+                originY: 'center'
+              });
+
+              const branch4Text = new fabric.Text('Branch 4', {
+                left: 0,
+                top: 0,
+                fontSize: 12,
+                fill: 'white',
+                fontWeight: 'bold',
+                originX: 'center',
+                originY: 'center'
+              });
+
+              // Create branch4 group
+              const branch4Group = new fabric.Group([branch4Node, branch4Text], {
+                left: this.canvas.width / 2 - 150,
+                top: this.canvas.height / 2,
+                selectable: true,
+                hasControls: true,
+                hasBorders: true
+              });
+
+              // Store groups for connection management
+              this.nodes.central = centralGroup;
+              this.nodes.branch1 = branch1Group;
+              this.nodes.branch2 = branch2Group;
+              this.nodes.branch3 = branch3Group;
+              this.nodes.branch4 = branch4Group;
+
+              // Create connections
+              this.createConnection('central', 'branch1');
+              this.createConnection('central', 'branch2');
+              this.createConnection('central', 'branch3');
+              this.createConnection('central', 'branch4');
+
+              // Add all groups to canvas
+              Object.values(this.nodes).forEach(group => {
+                this.canvas.add(group);
+              });
+
+              // Set up movement handlers for dynamic connections
+              this.setupMovementHandlers();
+
+              // Render the canvas
+              this.canvas.renderAll();
+            },
+
+            createConnection(fromNodeId, toNodeId) {
+              const fromGroup = this.nodes[fromNodeId];
+              const toGroup = this.nodes[toNodeId];
+
+              // Calculate connection points (center of groups)
+              const fromCenter = {
+                x: fromGroup.left + fromGroup.width / 2,
+                y: fromGroup.top + fromGroup.height / 2
+              };
+              const toCenter = {
+                x: toGroup.left + toGroup.width / 2,
+                y: toGroup.top + toGroup.height / 2
+              };
+
+              // Create line connecting the nodes
+              const line = new fabric.Line([
+                fromCenter.x, fromCenter.y,
+                toCenter.x, toCenter.y
+              ], {
+                stroke: '#374151',
+                strokeWidth: 2,
+                selectable: false,
+                evented: false
+              });
+
+              // Store connection info
+              this.connections.push({
+                line: line,
+                from: fromNodeId,
+                to: toNodeId
+              });
+
+              this.canvas.add(line);
+            },
+
+            updateConnections() {
+              this.connections.forEach(connection => {
+                const fromGroup = this.nodes[connection.from];
+                const toGroup = this.nodes[connection.to];
+
+                const fromCenter = {
+                  x: fromGroup.left + fromGroup.width / 2,
+                  y: fromGroup.top + fromGroup.height / 2
+                };
+                const toCenter = {
+                  x: toGroup.left + toGroup.width / 2,
+                  y: toGroup.top + toGroup.height / 2
+                };
+
+                connection.line.set({
+                  x1: fromCenter.x,
+                  y1: fromCenter.y,
+                  x2: toCenter.x,
+                  y2: toCenter.y
+                });
+              });
+
+              this.canvas.renderAll();
+            },
+
+            setupMovementHandlers() {
+              // Add movement handlers to all groups
+              Object.values(this.nodes).forEach(group => {
+                group.on('moving', () => {
+                  this.updateConnections();
+                });
+                group.on('moved', () => {
+                  this.updateConnections();
+                });
+              });
+            },
+
+            setupResizeHandler() {
+              window.addEventListener('resize', () => {
+                this.canvas.setDimensions({
+                  width: window.innerWidth,
+                  height: window.innerHeight
+                });
+                this.createMindMap();
+              });
+            }
+          }));
+        });
+    </script>
   </body>
 </html>
