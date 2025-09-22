@@ -144,6 +144,116 @@ const mindmapNodes = [
     text: "Bitcoin",
     parent: "id19",
   },
+  {
+    id: "id30",
+    text: "Ethereum",
+    parent: "id19",
+  },
+  {
+    id: "id31",
+    text: "Smart Contracts",
+    parent: "id19",
+  },
+  {
+    id: "id32",
+    text: "DeFi",
+    parent: "id20",
+  },
+  {
+    id: "id33",
+    text: "NFTs",
+    parent: "id20",
+  },
+  {
+    id: "id34",
+    text: "Web3",
+    parent: "id20",
+  },
+  {
+    id: "id35",
+    text: "Scalability",
+    parent: "id21",
+  },
+  {
+    id: "id36",
+    text: "Funding",
+    parent: "id21",
+  },
+  {
+    id: "id37",
+    text: "MVP",
+    parent: "id22",
+  },
+  {
+    id: "id38",
+    text: "Prototyping",
+    parent: "id22",
+  },
+  {
+    id: "id39",
+    text: "User Testing",
+    parent: "id22",
+  },
+  {
+    id: "id40",
+    text: "Publications",
+    parent: "id23",
+  },
+  {
+    id: "id41",
+    text: "Journals",
+    parent: "id23",
+  },
+  {
+    id: "id42",
+    text: "Conferences",
+    parent: "id23",
+  },
+  {
+    id: "id43",
+    text: "Labs",
+    parent: "id24",
+  },
+  {
+    id: "id44",
+    text: "Field Studies",
+    parent: "id24",
+  },
+  {
+    id: "id45",
+    text: "Surveys",
+    parent: "id24",
+  },
+  {
+    id: "id46",
+    text: "Object Detection",
+    parent: "id25",
+  },
+  {
+    id: "id47",
+    text: "Image Recognition",
+    parent: "id25",
+  },
+  {
+    id: "id48",
+    text: "Segmentation",
+    parent: "id25",
+  },
+  {
+    id: "id49",
+    text: "NLP Models",
+    parent: "id26",
+  },
+  {
+    id: "id50",
+    text: "Chatbots",
+    parent: "id26",
+  },
+  {
+    id: "id51",
+    text: "Translation",
+    parent: "id26",
+  },
 ];
 
 document.addEventListener("alpine:init", () => {
@@ -169,12 +279,20 @@ document.addEventListener("alpine:init", () => {
         preserveObjectStacking: true,
       });
 
+      // Set initial zoom and zoom limits
+      this.canvas.setZoom(1);
+      this.minZoom = 0.1;
+      this.maxZoom = 5;
+
       // Initialize viewport transform to match canvas
       this.viewportTransform = this.canvas.viewportTransform.slice();
       console.log("Initial viewport transform:", this.viewportTransform);
 
       // Set up Fabric.js mouse events for panning
       this.setupFabricPanning();
+
+      // Set up zoom event handling
+      this.setupZoomHandling();
 
       this.createMindMap();
       this.setupResizeHandler();
@@ -717,6 +835,36 @@ document.addEventListener("alpine:init", () => {
         });
 
         console.log("Direct DOM event listeners added for panning on upper canvas");
+      });
+    },
+
+    setupZoomHandling() {
+      // Listen to mouse wheel events to enforce zoom limits
+      this.canvas.on('mouse:wheel', (opt) => {
+        const delta = opt.e.deltaY;
+        const zoom = this.canvas.getZoom();
+        let newZoom;
+
+        if (delta > 0) {
+          // Zoom out
+          newZoom = zoom * 0.9;
+        } else {
+          // Zoom in
+          newZoom = zoom * 1.1;
+        }
+
+        // Clamp zoom between min and max
+        newZoom = Math.min(Math.max(newZoom, this.minZoom), this.maxZoom);
+
+        if (newZoom !== zoom) {
+          // Calculate zoom point relative to canvas
+          const zoomPoint = new fabric.Point(opt.e.offsetX, opt.e.offsetY);
+          this.canvas.zoomToPoint(zoomPoint, newZoom);
+        }
+
+        // Prevent default scrolling behavior
+        opt.e.preventDefault();
+        opt.e.stopPropagation();
       });
     },
   }));
