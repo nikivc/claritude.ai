@@ -1,258 +1,8 @@
-const mindmapNodes = [
+let mindmapNodes = [
   {
     id: "id1",
-    text: "1",
+    text: "Root",
     parent: null, // This is the root item
-  },
-  {
-    id: "id2",
-    text: "2",
-    parent: "id1",
-  },
-  {
-    id: "id3",
-    text: "3",
-    parent: "id1",
-  },
-  {
-    id: "id4",
-    text: "4",
-    parent: "id1",
-  },
-  {
-    id: "id5",
-    text: "5",
-    parent: "id2",
-  },
-  {
-    id: "id6",
-    text: "6",
-    parent: "id2",
-  },
-  {
-    id: "id7",
-    text: "7",
-    parent: "id3",
-  },
-  {
-    id: "id8",
-    text: "8",
-    parent: "id3",
-  },
-  {
-    id: "id9",
-    text: "9",
-    parent: "id3",
-  },
-  {
-    id: "id10",
-    text: "Technology",
-    parent: "id4",
-  },
-  {
-    id: "id11",
-    text: "Innovation",
-    parent: "id4",
-  },
-  {
-    id: "id12",
-    text: "AI",
-    parent: "id10",
-  },
-  {
-    id: "id13",
-    text: "Machine Learning",
-    parent: "id10",
-  },
-  {
-    id: "id14",
-    text: "Blockchain",
-    parent: "id10",
-  },
-  {
-    id: "id15",
-    text: "Startups",
-    parent: "id11",
-  },
-  {
-    id: "id16",
-    text: "Research",
-    parent: "id11",
-  },
-  {
-    id: "id17",
-    text: "Deep Learning",
-    parent: "id13",
-  },
-  {
-    id: "id18",
-    text: "Neural Networks",
-    parent: "id13",
-  },
-  {
-    id: "id19",
-    text: "Cryptocurrency",
-    parent: "id14",
-  },
-  {
-    id: "id20",
-    text: "Smart Contracts",
-    parent: "id14",
-  },
-  {
-    id: "id21",
-    text: "Venture Capital",
-    parent: "id15",
-  },
-  {
-    id: "id22",
-    text: "Product Development",
-    parent: "id15",
-  },
-  {
-    id: "id23",
-    text: "Academic Papers",
-    parent: "id16",
-  },
-  {
-    id: "id24",
-    text: "Experiments",
-    parent: "id16",
-  },
-  {
-    id: "id25",
-    text: "Computer Vision",
-    parent: "id17",
-  },
-  {
-    id: "id26",
-    text: "Natural Language",
-    parent: "id17",
-  },
-  {
-    id: "id27",
-    text: "CNN",
-    parent: "id18",
-  },
-  {
-    id: "id28",
-    text: "RNN",
-    parent: "id18",
-  },
-  {
-    id: "id29",
-    text: "Bitcoin",
-    parent: "id19",
-  },
-  {
-    id: "id30",
-    text: "Ethereum",
-    parent: "id19",
-  },
-  {
-    id: "id31",
-    text: "Smart Contracts",
-    parent: "id19",
-  },
-  {
-    id: "id32",
-    text: "DeFi",
-    parent: "id20",
-  },
-  {
-    id: "id33",
-    text: "NFTs",
-    parent: "id20",
-  },
-  {
-    id: "id34",
-    text: "Web3",
-    parent: "id20",
-  },
-  {
-    id: "id35",
-    text: "Scalability",
-    parent: "id21",
-  },
-  {
-    id: "id36",
-    text: "Funding",
-    parent: "id21",
-  },
-  {
-    id: "id37",
-    text: "MVP",
-    parent: "id22",
-  },
-  {
-    id: "id38",
-    text: "Prototyping",
-    parent: "id22",
-  },
-  {
-    id: "id39",
-    text: "User Testing",
-    parent: "id22",
-  },
-  {
-    id: "id40",
-    text: "Publications",
-    parent: "id23",
-  },
-  {
-    id: "id41",
-    text: "Journals",
-    parent: "id23",
-  },
-  {
-    id: "id42",
-    text: "Conferences",
-    parent: "id23",
-  },
-  {
-    id: "id43",
-    text: "Labs",
-    parent: "id24",
-  },
-  {
-    id: "id44",
-    text: "Field Studies",
-    parent: "id24",
-  },
-  {
-    id: "id45",
-    text: "Surveys",
-    parent: "id24",
-  },
-  {
-    id: "id46",
-    text: "Object Detection",
-    parent: "id25",
-  },
-  {
-    id: "id47",
-    text: "Image Recognition",
-    parent: "id25",
-  },
-  {
-    id: "id48",
-    text: "Segmentation",
-    parent: "id25",
-  },
-  {
-    id: "id49",
-    text: "NLP Models",
-    parent: "id26",
-  },
-  {
-    id: "id50",
-    text: "Chatbots",
-    parent: "id26",
-  },
-  {
-    id: "id51",
-    text: "Translation",
-    parent: "id26",
   },
 ];
 
@@ -296,6 +46,11 @@ document.addEventListener("alpine:init", () => {
 
       this.createMindMap();
       this.setupResizeHandler();
+
+      // Start adding new nodes every 3 seconds
+      setInterval(() => {
+        this.addNewNode();
+      }, 3000);
     },
 
     createMindMap() {
@@ -866,6 +621,45 @@ document.addEventListener("alpine:init", () => {
         opt.e.preventDefault();
         opt.e.stopPropagation();
       });
+    },
+
+    addNewNode() {
+      if (mindmapNodes.length === 0) return;
+
+      // Pick a random existing node
+      const randomIndex = Math.floor(Math.random() * mindmapNodes.length);
+      const randomNode = mindmapNodes[randomIndex];
+
+      // Decide whether to add as child or sibling
+      const isChild = Math.random() < 0.5; // 50% chance for each
+
+      let newParent;
+      if (isChild || randomNode.parent === null) {
+        // Add as child to the random node
+        newParent = randomNode.id;
+      } else {
+        // Add as sibling: same parent as the random node
+        newParent = randomNode.parent;
+      }
+
+      // Generate new ID
+      const newId = `id${mindmapNodes.length + 1}`;
+
+      // Generate some sample text
+      const sampleTexts = ["Idea", "Concept", "Topic", "Branch", "Extension", "Detail", "Aspect", "Element", "Part", "Component"];
+      const randomText = sampleTexts[Math.floor(Math.random() * sampleTexts.length)] + (mindmapNodes.length + 1);
+
+      // Add new node
+      const newNode = {
+        id: newId,
+        text: randomText,
+        parent: newParent,
+      };
+
+      mindmapNodes.push(newNode);
+
+      // Rebuild the mind map
+      this.createMindMap();
     },
   }));
 });
