@@ -36,7 +36,6 @@ document.addEventListener("alpine:init", () => {
 
       // Initialize viewport transform to match canvas
       this.viewportTransform = this.canvas.viewportTransform.slice();
-      console.log("Initial viewport transform:", this.viewportTransform);
 
       // Set up Fabric.js mouse events for panning
       this.setupFabricPanning();
@@ -483,16 +482,12 @@ document.addEventListener("alpine:init", () => {
     },
 
     handleContextMenu(event) {
-      console.log("Context menu prevented");
       event.preventDefault();
       event.stopPropagation();
       return false;
     },
 
     setupFabricPanning() {
-      console.log(
-        "Setting up Fabric.js v6 panning with Alpine.js compatibility...",
-      );
 
       // Store panning state
       this.isPanning = false;
@@ -507,7 +502,6 @@ document.addEventListener("alpine:init", () => {
         const preventContextMenu = (e) => {
           if (e.target === canvasElement || e.target === upperCanvas ||
               canvasElement.contains(e.target) || (upperCanvas && upperCanvas.contains(e.target))) {
-            console.log("Context menu prevented on canvas");
             e.preventDefault();
             e.stopPropagation();
             return false;
@@ -527,7 +521,6 @@ document.addEventListener("alpine:init", () => {
 
         targetElement.addEventListener("mousedown", (e) => {
           if (e.button === 2) {
-            console.log("Right click detected - starting pan");
             this.isPanning = true;
             this.lastPanPoint = { x: e.clientX, y: e.clientY };
 
@@ -548,8 +541,6 @@ document.addEventListener("alpine:init", () => {
             const deltaX = e.clientX - this.lastPanPoint.x;
             const deltaY = e.clientY - this.lastPanPoint.y;
 
-            console.log("Panning:", deltaX, deltaY);
-
             // Use Fabric.js built-in panning method
             this.canvas.relativePan({ x: deltaX, y: deltaY });
 
@@ -563,7 +554,6 @@ document.addEventListener("alpine:init", () => {
 
         targetElement.addEventListener("mouseup", (e) => {
           if (e.button === 2 && this.isPanning) {
-            console.log("Right click up - stopping pan");
             this.isPanning = false;
 
             // Restore cursor
@@ -581,7 +571,6 @@ document.addEventListener("alpine:init", () => {
         // Handle mouse leave
         targetElement.addEventListener("mouseleave", (e) => {
           if (this.isPanning) {
-            console.log("Mouse left - stopping pan");
             this.isPanning = false;
             targetElement.style.cursor = "move";
             canvasElement.style.cursor = "move";
@@ -589,7 +578,6 @@ document.addEventListener("alpine:init", () => {
           }
         });
 
-        console.log("Direct DOM event listeners added for panning on upper canvas");
       });
     },
 
